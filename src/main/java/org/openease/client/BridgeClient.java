@@ -14,6 +14,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -25,6 +26,8 @@ import org.json.JSONObject;
 
 import edu.wpi.rail.jrosbridge.Ros;
 import edu.wpi.rail.jrosbridge.Service;
+import edu.wpi.rail.jrosbridge.services.ServiceRequest;
+import edu.wpi.rail.jrosbridge.services.ServiceResponse;
 
 /**
  * A client rosbridge implementation for openEASE.
@@ -67,29 +70,101 @@ public class BridgeClient {
     }
 
 
-    public String getHost()
-    {
+    public String getHost() {
         return host;
     }
 
-    public String getApiToken()
-    {
+    public String getApiToken() {
         return apiToken;
     }
 
-    public Service getPrologQuery()
-    {
+    public Service getPrologQuery() {
         return prologQuery;
     }
 
-    public Service getPrologNext()
-    {
+    public Service getPrologNext() {
         return prologNext;
     }
 
-    public Service getPrologFinish()
-    {
+    public Service getPrologFinish() {
         return prologFinish;
+    }
+
+    /**
+     * Get one solution to a query.
+     * The query is given as Prolog-encoded string.
+     * 
+     * @throws EASEError if obtaining a solution has failed.
+     */
+    public String query_one(String query_string) throws EASEError {
+        // generate a random string as query id
+        String query_id = UUID.randomUUID().toString();
+        // create the query
+        query_create(query_id,query_string);
+        // call next() once
+        String solution = query_next(query_id);
+        // destroy the query
+        query_finish(query_id);
+        return solution;
+    }
+    
+    /**
+     * Create a new query. The query must be closed
+     * once finished with it by calling query_finish().
+     * Different solutions can be obtained by successively calling
+     * query_next() until it returns an empty string.
+     * 
+     * @throws EASEError if the query creation failed
+     */
+    public void query_create(String query_id, String query_string) throws EASEError {
+        String request_json = "{"+
+            "\"id\": \"" + query_id + "\"," +
+            "\"mode\": 1," +
+            "\"query\": \"" + query_string + "\"" +
+            "}";
+        ServiceRequest  request  = new ServiceRequest(request_json);
+        ServiceResponse response = prologQuery.callServiceAndWait(request);
+        //
+        JSONObject jsonObj = new JSONObject(response.toString());
+        if(!jsonObj.getBoolean("ok")) {
+            throw new EASEError("failed to create query");
+        }
+    }
+    
+    /**
+     * Close a previously created query.
+     */
+    public void query_finish(String query_id) {
+        String request_json = "{"+
+            "\"id\": \"" + query_id + "\"" +
+            "}";
+        ServiceRequest request = new ServiceRequest(request_json);
+        prologFinish.callServiceAndWait(request);
+    }
+    
+    /**
+     * Get one solution. Returns an empty string in case 
+     * no more solutions can be found.
+     * 
+     * @throws EASEError if the query failed, or if the query id is invalid
+     */
+    public String query_next(String query_id) throws EASEError {
+        String request_json = "{"+
+            "\"id\": \"" + query_id + "\"" +
+            "}";
+        ServiceRequest  request  = new ServiceRequest(request_json);
+        ServiceResponse response =  prologNext.callServiceAndWait(request);
+        //
+        JSONObject jsonObj = new JSONObject(response.toString());
+        String solution = jsonObj.getString("solution");
+        int status = jsonObj.getInt("status");
+        if(status==1) {
+            throw new EASEError("wrong query id");
+        }
+        else if(status==2) {
+            throw new EASEError("query failed: " + solution);
+        }
+        return solution;
     }
 
     /**
