@@ -7,7 +7,7 @@ The token can be obtained from your user page on the openEASE webpage.
 The current implementation further requires manual download of
 the SSL certificate used by the openEASE webpage.
 
-This package further an example client that can be called from commandline:
+This package further includes an example client that can be called from commandline:
 
     java -jar build/libs/oeclient-example.jar \
         --token="gSTV7ZC751JJDDylySKG04ApglviWnloWXNYm367f6ypo7VlvWPSi3rGmxYM9Bgw" \
