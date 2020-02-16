@@ -17,11 +17,23 @@ dependencies {
    compile group: 'javax.websocket', name: 'javax.websocket-api', version: '1.0'
    compile group: 'org.glassfish.tyrus', name: 'tyrus-container-grizzly-client', version: '1.13.1'
    compile group: 'org.glassfish.tyrus', name: 'tyrus-client', version: '1.13.1'
+   compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
+}
+
+task testJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Jar File Example',  
+        	'Implementation-Version': '1.0.0',
+        	'Main-Class': 'example.easeclient.ExampleClient'
+    }
+    baseName = project.name + '-example'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
 // task javadocJar(type: Jar, dependsOn: javadoc) {
@@ -31,6 +43,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 
 artifacts {
     archives sourcesJar
+    archives testJar
 //     archives javadocJar
 }
 
