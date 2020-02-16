@@ -130,9 +130,9 @@ public class BridgeClient {
 
         while(!isConnected) isConnected = ros.connectInternal();
         authenticate();
-        prologQuery = new Service(ros, "/json_prolog/simple_query", "json_prolog/PrologQuery");
-        prologNext = new Service(ros, "/json_prolog/next_solution", "json_prolog/PrologNextSolution");
-        prologFinish = new Service(ros, "/json_prolog/finish", "json_prolog/PrologFinish");
+        prologQuery = new Service(ros, "/rosprolog/query", "json_prolog/PrologQuery");
+        prologNext = new Service(ros, "/rosprolog/next_solution", "json_prolog/PrologNextSolution");
+        prologFinish = new Service(ros, "/rosprolog/finish", "json_prolog/PrologFinish");
     }
 
     /**
